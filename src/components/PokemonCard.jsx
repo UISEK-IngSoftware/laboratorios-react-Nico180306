@@ -1,6 +1,9 @@
 import { Card, CardContent, CardMedia, Typography } from '@mui/material'
 
 export default function PokemonCard({ pokemon }) {
+  const mediaURL = import.meta.env.VITE_MEDIA_URL;
+  pokemon.image = `${mediaURL}/${pokemon.picture}`;
+  
   return (
     <Card>
         <CardMedia
