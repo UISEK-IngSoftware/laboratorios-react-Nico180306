@@ -9,7 +9,52 @@ const apiClient = axios.create({
     },
 });
 
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+}, (error) => {
+    return Promise.reject(error);
+});
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // reader.result ya incluye el encabezado, lo usamos completo
+      resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export const fetchPokemons = async () => {
+    try {
     const response = await apiClient.get('/pokemons/');
     return response.data; 
-}
+    } catch (error) {
+    console.error('Error al obtener pokemons:', error);
+    throw error;
+    }
+};
+
+export const addPokemon = async (pokemonData) => {
+    let pictureBase64 = "";
+    if (pokemonData.picture) {
+        pictureBase64 = await fileToBase64(pokemonData.picture);
+    }
+    const payload = {
+        ...pokemonData,
+        picture: pictureBase64,
+    };
+    try {
+    const response = await apiClient.post('/pokemons/', payload);
+    return response.data;
+    } catch (error) {
+    console.error('Error adding pokemon:', error);
+    throw error;
+    }
+};
