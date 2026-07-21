@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "./LoginForm.css";
 import { login } from "../services/authService";
+import { Spinner } from "../components/Spinner";
 
 export default function LoginForm() {
 
@@ -11,16 +12,24 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [errorMsg, setErrorMsg] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        setLoading(true);
         login(username, password).then(() => {
             navigate("/");
         }).catch((error) => {
             console.error("Error al iniciar sesión:", error);
             setErrorMsg("Nombre de usuario o contraseña incorrectos. Por favor, inténtelo de nuevo.");
+        }).finally(() => {
+            setLoading(false);
         });
     };
+
+    if (loading) {
+        return <Spinner />
+    }
 
     return (
         <Box component="form" className="login-form" onSubmit={handleLogin}>

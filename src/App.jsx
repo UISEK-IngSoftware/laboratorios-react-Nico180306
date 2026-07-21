@@ -16,6 +16,7 @@ function App() {
           <Routes>
             <Route path="/" element={<PokemonList />} />
             <Route path="/add" element={<PokemonForm />} />
+            <Route path="/edit/:id" element={<PokemonForm />} />
             <Route path="/login" element={<LoginForm />} />
           </Routes>
         </Container>

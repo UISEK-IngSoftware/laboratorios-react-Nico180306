@@ -1,46 +1,97 @@
-import { Box, Button, TextField, Typography, Alert, MenuItem } from '@mui/material'
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { addPokemon } from '../services/pokemonService'
+import { Box, Button, TextField, Typography, Alert, MenuItem, Snackbar } from '@mui/material'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { addPokemon, fetchPokemonById, updatePokemon } from '../services/pokemonService'
 import './PokemonForm.css'
 
-export default function PokemonForm() {
+const emptyPokemonData = {
+    name: "",
+    type: "",
+    weight: "",
+    height: "",
+    picture: null,
+};
 
+export default function PokemonForm() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const { id } = useParams();
+    const isEditMode = Boolean(id);
+    const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
-    const [pokemonData, setPokemonData] = useState({
-        name: "",
-        type: "",
-        weight: "",
-        height: "",
-        picture: null,
-    });
+    const [pokemonData, setPokemonData] = useState(emptyPokemonData);
+
+    useEffect(() => {
+        if (!isEditMode) {
+            setPokemonData(emptyPokemonData);
+            return;
+        }
+
+        const initialPokemon = location.state?.pokemon;
+        if (initialPokemon) {
+            setPokemonData({
+                name: initialPokemon.name || "",
+                type: initialPokemon.type || "",
+                weight: initialPokemon.weight ?? "",
+                height: initialPokemon.height ?? "",
+                picture: initialPokemon.picture || null,
+            });
+            return;
+        }
+
+        fetchPokemonById(id).then((pokemon) => {
+            setPokemonData({
+                name: pokemon.name || "",
+                type: pokemon.type || "",
+                weight: pokemon.weight ?? "",
+                height: pokemon.height ?? "",
+                picture: pokemon.picture || null,
+            });
+        }).catch((error) => {
+            console.error('Error cargando el pokemon:', error);
+            setErrorMsg('No se pudo cargar la información del pokemon.');
+        });
+    }, [id, isEditMode, location.state]);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
         if (name === 'picture') {
-            setPokemonData({ ...pokemonData, picture: files[0] });
+            setPokemonData((currentData) => ({ ...currentData, picture: files[0] ?? null }));
         } else {
-            setPokemonData({ ...pokemonData, [name]: value });
+            setPokemonData((currentData) => ({ ...currentData, [name]: value }));
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        addPokemon(pokemonData).then(() => {
-            alert('Pokemon agregado exitosamente');
-            navigate("/");
-        }).catch((error) => {
-            console.error('Error al agregar el pokemon:', error);
-            setErrorMsg('Error al agregar el pokemon. Por favor, inténtelo de nuevo más tarde.');
-        });
-    };
+        setLoading(true);
+        setErrorMsg("");
 
+        try {
+            if (isEditMode) {
+                await updatePokemon(id, pokemonData);
+                alert('Pokemon actualizado exitosamente');
+            } else {
+                await addPokemon(pokemonData);
+                alert('Pokemon agregado exitosamente');
+            }
+            navigate("/");
+        } catch (error) {
+            console.error('Error al guardar el pokemon:', error);
+            setErrorMsg(
+                isEditMode
+                    ? 'Error al actualizar el pokemon. Por favor, inténtelo de nuevo más tarde.'
+                    : 'Error al agregar el pokemon. Por favor, inténtelo de nuevo más tarde.'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <>
             <Typography variant="h4" gutterBottom>
-                Formulario de Pokemon
+                {isEditMode ? 'Editar Pokemon' : 'Formulario de Pokemon'}
             </Typography>
             <Box
                 component="form"
@@ -97,8 +148,8 @@ export default function PokemonForm() {
                         {errorMsg}
                     </Alert>
                 )}
-                <Button variant="contained" color="primary" type="submit">
-                    Guardar
+                <Button variant="contained" color="primary" type="submit" disabled={loading}>
+                    {loading ? 'Guardando...' : (isEditMode ? 'Actualizar' : 'Guardar')}
                 </Button>
             </Box>
         </>

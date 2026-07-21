@@ -23,7 +23,6 @@ function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
-      // reader.result ya incluye el encabezado, lo usamos completo
       resolve(reader.result);
     };
     reader.onerror = reject;
@@ -33,28 +32,74 @@ function fileToBase64(file) {
 
 export const fetchPokemons = async () => {
     try {
-    const response = await apiClient.get('/pokemons/');
-    return response.data; 
+        const response = await apiClient.get('/pokemons/');
+        return response.data;
     } catch (error) {
-    console.error('Error al obtener pokemons:', error);
-    throw error;
+        console.error('Error al obtener pokemons:', error);
+        throw error;
+    }
+};
+
+export const fetchPokemonById = async (id) => {
+    try {
+        const response = await apiClient.get(`/pokemons/${id}/`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener el pokemon:', error);
+        throw error;
     }
 };
 
 export const addPokemon = async (pokemonData) => {
     let pictureBase64 = "";
-    if (pokemonData.picture) {
+    if (pokemonData.picture instanceof File) {
         pictureBase64 = await fileToBase64(pokemonData.picture);
+    } else if (pokemonData.picture) {
+        pictureBase64 = pokemonData.picture;
     }
+
     const payload = {
         ...pokemonData,
         picture: pictureBase64,
     };
+
     try {
-    const response = await apiClient.post('/pokemons/', payload);
-    return response.data;
+        const response = await apiClient.post('/pokemons/', payload);
+        return response.data;
     } catch (error) {
-    console.error('Error adding pokemon:', error);
-    throw error;
+        console.error('Error adding pokemon:', error);
+        throw error;
+    }
+};
+
+export const updatePokemon = async (id, pokemonData) => {
+    let pictureBase64 = "";
+    if (pokemonData.picture instanceof File) {
+        pictureBase64 = await fileToBase64(pokemonData.picture);
+    } else if (pokemonData.picture) {
+        pictureBase64 = pokemonData.picture;
+    }
+
+    const payload = {
+        ...pokemonData,
+        picture: pictureBase64,
+    };
+
+    try {
+        const response = await apiClient.put(`/pokemons/${id}/`, payload);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating pokemon:', error);
+        throw error;
+    }
+};
+
+export const deletePokemon = async (id) => {
+    try {
+        const response = await apiClient.delete(`/pokemons/${id}/`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting pokemon:', error);
+        throw error;
     }
 };
